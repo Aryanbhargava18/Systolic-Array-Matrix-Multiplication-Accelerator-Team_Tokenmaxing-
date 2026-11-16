@@ -1,0 +1,24 @@
+% (a) Top-level hierarchy of systolic_top
+\begin{tikzpicture}[font=\sffamily\scriptsize, >={Stealth[length=1.6mm]},
+  blk/.style={draw, rounded corners=2pt, align=center, minimum width=27mm, minimum height=8mm, fill=white},
+  ctl/.style={blk, fill=blue!8, draw=blue!60!black},
+  arr/.style={blk, fill=orange!12, draw=orange!70!black},
+  mem/.style={blk, fill=gray!12, draw=gray!60!black}]
+\node[align=center] (host) {host / testbench\\\texttt{wr\_en, wr\_sel\_b, wr\_addr, wr\_data}};
+\node[mem, below=4mm of host] (buf) {\textbf{input\_buffers}\\A and B scratchpads ($N^2$ each)};
+\node[ctl, below=4mm of buf] (ctl) {\textbf{controller}\\FSM IDLE$\to$CLEAR$\to$RUN$\to$DONE\\skewed A / B feed};
+\node[arr, below=6mm of ctl] (sa) {\textbf{systolic\_array}\\$N\times N$ output-stationary PEs};
+\node[mem, below=4mm of sa] (out) {\textbf{output\_regs}\\capture C on \texttt{done}};
+\node[below=3mm of out, align=center] (c) {C ($N\times N$, INT32)};
+\draw[->] (host) -- (buf);
+\draw[->] (buf) -- node[right] {\texttt{a\_mem, b\_mem}} (ctl);
+\draw[->] ([xshift=-7mm]ctl.south) -- node[left] {\texttt{a\_west[$N$]}} ([xshift=-7mm]sa.north);
+\draw[->] ([xshift=7mm]ctl.south) -- node[right] {\texttt{b\_north[$N$]}} ([xshift=7mm]sa.north);
+\draw[->] (sa) -- node[right] {\texttt{c\_pe}} (out);
+\draw[->] (out) -- (c);
+\node[left=1mm of host.west, anchor=east] (start) {\texttt{start}};
+\draw[->] (start.south) |- (ctl.west);
+\node[right=4mm of ctl.east, align=left] (dn) {\texttt{done}\\\texttt{cycle\_count}};
+\draw[->] (ctl.east) -- (dn.west);
+\draw[->, dashed] ([yshift=-2mm]ctl.west) -| ++(-4mm,-8mm) |- node[pos=0.25,left] {\texttt{clear, enable}} (sa.west);
+\end{tikzpicture}

@@ -18,8 +18,8 @@ RTL = rtl/mac_unit.v \
       rtl/systolic_top.v \
       rtl/seq_matmul.v
 
-.PHONY: all dirs pe systolic compare test \
-        show_pe show_systolic show_compare clean
+.PHONY: all dirs pe systolic compare demo test \
+        show_pe show_systolic show_compare show_demo synth_pe clean
 
 all: test
 
@@ -41,6 +41,15 @@ compare: dirs
 	$(VVP) sim/tb_compare.out
 	@cp -f sim/tb_compare.vcd waveforms/ 2>/dev/null || true
 
+demo: dirs
+	$(IVERILOG) $(FLAGS) -o sim/tb_demo.out $(RTL) tb/tb_demo.v
+	$(VVP) sim/tb_demo.out
+	@cp -f sim/tb_demo.vcd waveforms/ 2>/dev/null || true
+
+# Optional: Yosys estimate of one PE on a Xilinx 7-series part (needs yosys)
+synth_pe:
+	yosys -q -s syn/pe_xc7.ys
+
 test: pe systolic compare
 	@echo ""
 	@echo "=== All simulation targets finished ==="
@@ -54,6 +63,9 @@ show_systolic: systolic
 
 show_compare: compare
 	$(GTKWAVE) waveforms/tb_compare.vcd &
+
+show_demo: demo
+	$(GTKWAVE) waveforms/tb_demo.vcd &
 
 clean:
 	rm -rf sim/*.out sim/*.vcd waveforms/*.vcd

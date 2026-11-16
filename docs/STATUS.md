@@ -11,13 +11,18 @@
 - [x] Related work notes (`docs/related_work.md`)
 - [x] README + `make show_*` GTKWave workflow
 - [x] `make test` flow
+- [x] Demo testbench `tb/tb_demo.v` + `make demo`
+- [x] Block diagram figure (`docs/figures/block_diagram.png`)
+- [x] Waveform figure of A/B skew from VCD (`docs/figures/waveform_demo.png`)
+- [x] Yosys estimate for one PE (`syn/pe_xc7_stat.txt`)
+- [x] IEEE Phase I report (`docs/phase1/IEEE_Phase1_Report.pdf`)
 
 ## Remaining (demo / report / FPGA) — lab / write-up only
 
-- [ ] GTKWave screenshots of A/B skew (data propagation)
-- [ ] Vivado synthesis: LUT / FF / DSP + Fmax (lab PC)
-- [ ] Final technical report + live demonstration
-- [ ] Optional: block-diagram figure for slides
+- [ ] Phase I demo video link in README
+- [ ] Vivado synthesis: LUT / FF / DSP + Fmax (lab PC) — Phase II
+- [ ] Scaling study (more N), back-to-back matrices — Phase II
+- [ ] Final IEEE report (Results, Discussion, Conclusion) — Phase II
 
 Loop stopped: local RTL/sim/docs are complete; remaining items need lab tools or human write-up.
 

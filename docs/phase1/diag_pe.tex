@@ -1,0 +1,33 @@
+% (c) Output-stationary processing element
+\begin{tikzpicture}[font=\sffamily\scriptsize, >={Stealth[length=1.5mm]},
+  r/.style={draw, fill=gray!12, minimum width=8mm, minimum height=4.5mm, inner sep=1pt},
+  op/.style={draw, circle, minimum size=5.5mm, inner sep=0, fill=white}]
+\node[anchor=east] (ain) at (0,0) {$a_{in}$};
+\node[r] (ra) at (3.2,0) {reg};
+\node[anchor=west] (aout) at (4.0,0) {$a_{out}\to$ east};
+\node[anchor=south] (bin) at (2.2,1.0) {$b_{in}$};
+\node[op] (mul) at (1.2,-0.9) {$\times$};
+\node[op] (add) at (1.2,-1.85) {$+$};
+\node[r, fill=orange!15, minimum width=12mm] (acc) at (1.2,-2.75) {$C_{ij}$ (32b)};
+\node[r] (rb) at (2.2,-1.75) {reg};
+\node[anchor=north] (bout) at (2.2,-3.25) {$b_{out}\downarrow$ south};
+\node[anchor=north] (cout) at (1.0,-3.25) {$c_{out}$};
+% a path
+\draw[->] (ain.east) -- (ra.west);
+\draw[->] (ra.east) -- (aout.west);
+\fill (0.5,0) circle (0.8pt);
+\draw[->] (0.5,0) |- (mul.west);
+% b path (crosses the a line)
+\draw (bin.south) -- (2.2,0.07);
+\draw (2.2,-0.07) -- (2.2,-0.9);
+\fill (2.2,-0.9) circle (0.8pt);
+\draw[->] (2.2,-0.9) -- (mul.east);
+\draw[->] (2.2,-0.9) -- (rb.north);
+\draw[->] (rb.south) -- (bout.north);
+% MAC
+\draw[->] (mul) -- node[left, font=\sffamily\tiny] {16b} (add);
+\draw[->] (add) -- (acc);
+\draw[->] (acc.west) -- ++(-0.35,0) |- (add.west);
+\draw[->] ([xshift=-2mm]acc.south) -- (cout.north);
+\node[anchor=west, align=left, font=\sffamily\tiny] at (2.75,-2.75) {\texttt{enable}: $C \leftarrow C + a\,b$\\\texttt{clear}: $C \leftarrow 0$};
+\end{tikzpicture}

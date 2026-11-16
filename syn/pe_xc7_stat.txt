@@ -1,0 +1,54 @@
+
+4. Printing statistics.
+
+=== $paramod$174639793641f67d9f356196e99aa2188f4235c1\mac_unit ===
+
+   Number of wires:                  5
+   Number of wire bits:             96
+   Number of public wires:           4
+   Number of public wire bits:      80
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                  1
+     DSP48E1                         1
+
+=== pe ===
+
+   Number of wires:                100
+   Number of wire bits:            251
+   Number of public wires:          10
+   Number of public wire bits:     100
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                198
+     $paramod$174639793641f67d9f356196e99aa2188f4235c1\mac_unit      1
+     BUFG                            1
+     FDCE                           48
+     IBUF                           20
+     INV                            48
+     LUT4                           32
+     OBUF                           48
+
+=== design hierarchy ===
+
+   pe                                1
+     $paramod$174639793641f67d9f356196e99aa2188f4235c1\mac_unit      1
+
+   Number of wires:                105
+   Number of wire bits:            347
+   Number of public wires:          14
+   Number of public wire bits:     180
+   Number of memories:               0
+   Number of memory bits:            0
+   Number of processes:              0
+   Number of cells:                198
+     BUFG                            1
+     DSP48E1                         1
+     FDCE                           48
+     IBUF                           20
+     INV                            48
+     LUT4                           32
+     OBUF                           48
+

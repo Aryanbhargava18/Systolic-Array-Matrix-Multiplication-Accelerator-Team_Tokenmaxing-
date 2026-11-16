@@ -1,0 +1,35 @@
+% (b) 4x4 output-stationary array with skewed inputs
+\begin{tikzpicture}[font=\sffamily\scriptsize, >={Stealth[length=1.4mm]}]
+\def\s{9mm}
+\foreach \i in {0,...,3} \foreach \j in {0,...,3} {
+  \node[draw=orange!70!black, fill=orange!12, rounded corners=1.5pt, minimum size=6.6mm, inner sep=0, align=center]
+    (p\i\j) at (\j*\s, -\i*\s) {PE\\[-1pt]\tiny\i,\j};
+}
+\foreach \i in {0,...,3} \foreach \j in {0,1,2} {
+  \pgfmathtruncatemacro{\jn}{\j+1}
+  \draw[->, thick, blue!60!black] (p\i\j.east) -- (p\i\jn.west);
+}
+\foreach \j in {0,...,3} \foreach \i in {0,1,2} {
+  \pgfmathtruncatemacro{\in}{\i+1}
+  \draw[->, thick, green!45!black] (p\i\j.south) -- (p\in\j.north);
+}
+% skewed A rows on the left: row i delayed by i slots
+\foreach \i in {0,...,3} {
+  \draw[->, thick, blue!60!black] ($(p\i0.west)+(-3mm,0)$) -- (p\i0.west);
+  \foreach \k in {0,...,3} {
+    \pgfmathsetlengthmacro{\x}{-6mm - (\k+\i)*4.2mm}
+    \node[font=\sffamily\tiny, text=blue!60!black] at ($(p\i0.west)+(\x,0)$) {$a_{\i\k}$};
+  }
+}
+% skewed B columns on top: column j delayed by j slots
+\foreach \j in {0,...,3} {
+  \draw[->, thick, green!45!black] ($(p0\j.north)+(0,3mm)$) -- (p0\j.north);
+  \foreach \k in {0,...,3} {
+    \pgfmathsetlengthmacro{\y}{5.5mm + (\k+\j)*3.2mm}
+    \node[font=\sffamily\tiny, text=green!45!black] at ($(p0\j.north)+(0,\y)$) {$b_{\k\j}$};
+  }
+}
+\node[font=\sffamily\scriptsize, align=center, text=blue!60!black, anchor=north] at ($(p30.south)+(-17mm,-2mm)$) {A rows enter skewed:\\row $i$ waits $i$ cycles};
+\node[font=\sffamily\scriptsize, align=left, text=green!45!black, anchor=west] at ($(p03.east)+(2mm,8mm)$) {B columns enter\\skewed: column $j$\\waits $j$ cycles};
+\node[font=\sffamily\scriptsize, align=center, anchor=north] at ($(p31.south)!0.5!(p32.south)+(0,-2mm)$) {$C_{ij}$ stays in PE$(i,j)$};
+\end{tikzpicture}

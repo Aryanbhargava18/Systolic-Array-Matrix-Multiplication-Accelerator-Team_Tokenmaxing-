@@ -1,0 +1,7 @@
+# Yosys estimate of one output-stationary PE on a Xilinx 7-series FPGA.
+# Run from the repository root:  make synth_pe   (or: yosys -s syn/pe_xc7.ys)
+# Note: the full top level uses SystemVerilog unpacked-array ports, which
+# Yosys 0.33 cannot parse; full-design numbers come from Vivado.
+read_verilog -sv rtl/mac_unit.v rtl/pe.v
+synth_xilinx -top pe -family xc7
+tee -o syn/pe_xc7_stat.txt stat
