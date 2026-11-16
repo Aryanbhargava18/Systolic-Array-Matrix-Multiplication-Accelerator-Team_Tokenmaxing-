@@ -1,7 +1,8 @@
 //==============================================================================
 // tb_pe.v
-// Directed PE / MAC tests:
-//   3*4, -2*5, 127*127, -128*-128, accumulate chain, clear, hold.
+// Directed PE / MAC tests (21 checks):
+//   3*4, -2*5, 127*127, -128*-128, -128*127, 2-step and 4-step signed
+//   accumulation, clear, clear-over-enable priority, hold, pass-through.
 //==============================================================================
 
 `timescale 1ns / 1ps
@@ -187,6 +188,67 @@ module tb_pe;
         else begin
             $display("PASS pass-through            a=%0d b=%0d", a_out, b_out);
         end
+
+        //--------------------------------------------------------------------
+        // Mixed sign extreme: -128 x 127 = -16256
+        //--------------------------------------------------------------------
+        tick;
+        enable = 1'b0;
+        clear  = 1'b1;
+        a_in   = 0;
+        b_in   = 0;
+        check_c(32'sd0, "clear before -128x127");
+
+        tick;
+        clear  = 1'b0;
+        a_in   = -8'sd128;
+        b_in   = 8'sd127;
+        enable = 1'b1;
+        check_c(-32'sd16256, "-128 x 127");
+
+        //--------------------------------------------------------------------
+        // Four-step signed accumulation (one full dot product for N = 4):
+        //   1*2 + (-3)*4 + 5*(-6) + (-7)*(-8) = 2 - 12 - 30 + 56 = 16
+        //--------------------------------------------------------------------
+        tick;
+        enable = 1'b0;
+        clear  = 1'b1;
+        check_c(32'sd0, "clear before 4-step acc");
+
+        tick;
+        clear  = 1'b0;
+        a_in   = 8'sd1;
+        b_in   = 8'sd2;
+        enable = 1'b1;
+        check_c(32'sd2, "4-step acc 1: 1x2");
+
+        tick;
+        a_in   = -8'sd3;
+        b_in   = 8'sd4;
+        check_c(-32'sd10, "4-step acc 2: +(-3)x4");
+
+        tick;
+        a_in   = 8'sd5;
+        b_in   = -8'sd6;
+        check_c(-32'sd40, "4-step acc 3: +5x(-6)");
+
+        tick;
+        a_in   = -8'sd7;
+        b_in   = -8'sd8;
+        check_c(32'sd16, "4-step acc 4: +(-7)x(-8)");
+
+        //--------------------------------------------------------------------
+        // Clear has priority over enable (both high in the same cycle)
+        //--------------------------------------------------------------------
+        tick;
+        clear  = 1'b1;
+        enable = 1'b1;
+        a_in   = 8'sd10;
+        b_in   = 8'sd10;
+        check_c(32'sd0, "clear wins over enable");
+
+        clear  = 1'b0;
+        enable = 1'b0;
 
         if (errors == 0)
             $display("\n*** tb_pe: ALL TESTS PASSED ***\n");

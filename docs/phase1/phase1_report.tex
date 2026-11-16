@@ -47,7 +47,7 @@ Code and demo video link:\\
 
 % =====================================================================
 \begin{abstract}
-Matrix multiplication is the core operation of machine-learning and signal-processing workloads, and a processor that performs one multiply-accumulate (MAC) at a time is slow at it. A systolic array speeds it up by using a grid of small processing elements (PEs) that pass data only to their neighbours, so many MACs happen in parallel without a shared bus. This project designs, implements and verifies a parameterised $N\times N$ systolic array in synthesizable Verilog that computes $C = A \times B$ for signed 8-bit inputs with 32-bit accumulation. We use an \emph{output-stationary} dataflow: each PE keeps one element of $C$, while rows of $A$ flow left to right and columns of $B$ flow top to bottom with a controlled time skew. The design has eight modules (MAC unit, PE, array, controller, input buffers, output registers, top level and a sequential baseline). In simulation with Icarus Verilog, all 13 PE checks, all 46 matrix tests (identity, zero, corner and 20 random cases for both $3\times3$ and $4\times4$) and a side-by-side comparison with the sequential baseline pass. A $4\times4$ multiplication finishes in 12 clock cycles ($3N$) instead of 65 ($N^3+1$), a $5.42\times$ speed-up. Phase II will add FPGA synthesis results (resources and maximum clock frequency) from Vivado and a deeper analysis of the design trade-offs.
+Matrix multiplication is the core operation of machine-learning and signal-processing workloads, and a processor that performs one multiply-accumulate (MAC) at a time is slow at it. A systolic array speeds it up by using a grid of small processing elements (PEs) that pass data only to their neighbours, so many MACs happen in parallel without a shared bus. This project designs, implements and verifies a parameterised $N\times N$ systolic array in synthesizable Verilog that computes $C = A \times B$ for signed 8-bit inputs with 32-bit accumulation. We use an \emph{output-stationary} dataflow: each PE keeps one element of $C$, while rows of $A$ flow left to right and columns of $B$ flow top to bottom with a controlled time skew. The design has eight modules (MAC unit, PE, array, controller, input buffers, output registers, top level and a sequential baseline). In simulation with Icarus Verilog, all 21 PE checks, all 46 matrix tests (identity, zero, corner and 20 random cases for both $3\times3$ and $4\times4$) and a side-by-side comparison with the sequential baseline pass. A $4\times4$ multiplication finishes in 12 clock cycles ($3N$) instead of 65 ($N^3+1$), a $5.42\times$ speed-up. Phase II will add FPGA synthesis results (resources and maximum clock frequency) from Vivado and a deeper analysis of the design trade-offs.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -194,14 +194,14 @@ The one-third utilisation is the fill-and-drain cost of output-stationary datafl
 \subsection{Verification Plan}
 All testbenches are self-checking and print PASS or FAIL:
 \begin{itemize}
-\item \texttt{tb\_pe}: 13 directed checks on one PE, including $3\times4 = 12$, $-2\times5 = -10$, the extremes $127\times127 = 16{,}129$ and $(-128)\times(-128) = 16{,}384$, accumulation over two steps, clear, hold when \texttt{enable} is low, and pass-through of $a$ and $b$.
+\item \texttt{tb\_pe}: 21 directed checks on one PE, including $3\times4 = 12$, $-2\times5 = -10$, the extremes $127\times127 = 16{,}129$, $(-128)\times(-128) = 16{,}384$ and $(-128)\times127 = -16{,}256$, signed accumulation over two and four steps (a full dot product for $N = 4$), clear, priority of \texttt{clear} over \texttt{enable}, hold when \texttt{enable} is low, and pass-through of $a$ and $b$.
 \item \texttt{tb\_systolic}: for $N = 4$ and $N = 3$, an identity case, a zero case, a corner case with the extreme values 127 and $-128$, and 20 random signed matrices; every output element is compared with a software golden model, and the latency is checked to be exactly $3N$ (46 tests in total).
 \item \texttt{tb\_compare}: the systolic array and the sequential baseline run on the same matrices; their results must match and their cycle counts must be 12 and 65.
 \item \texttt{tb\_demo}: a readable signed $4\times4$ example that prints $A$, $B$, the hardware result and the expected result, used in the demonstration video.
 \end{itemize}
 
 \subsection{Tool Flow}
-Verilog RTL is simulated with Icarus Verilog~\cite{iverilog} (\texttt{make test}), waveforms are inspected in GTKWave (Fig.~\ref{fig:wave} is drawn from the same VCD file by \texttt{scripts/plot\_waveform.py}), and synthesis for a Xilinx 7-series FPGA is done in Vivado on the lab machines. For an early resource estimate we also synthesised a single PE with the open-source Yosys tool~\cite{yosys}.
+Verilog RTL is simulated with Icarus Verilog~\cite{iverilog} (\texttt{make test}), waveforms are inspected in GTKWave with a saved signal layout (\texttt{waveforms/tb\_demo.gtkw}; Fig.~\ref{fig:wave} is drawn from the same VCD file by \texttt{scripts/plot\_waveform.py}), and synthesis for a Xilinx 7-series FPGA is done in Vivado on the lab machines. For an early resource estimate we also synthesised a single PE with the open-source Yosys tool~\cite{yosys}.
 
 % =====================================================================
 \section{Prototype Status and Preliminary Results}
@@ -219,10 +219,10 @@ The register-transfer-level (RTL) design and its verification are complete. Tabl
 \textbf{Item} & \textbf{Status} \\
 \midrule
 Eight synthesizable RTL modules (\texttt{rtl/}) & Done \\
-PE testbench: 13/13 checks pass & Done \\
+PE testbench: 21/21 checks pass & Done \\
 System testbench: 46/46 tests pass ($N = 3$ and 4) & Done \\
 Systolic vs.\ sequential comparison: results match & Done \\
-Demo testbench and waveform analysis & Done \\
+Demo testbench, GTKWave save file and waveform analysis & Done \\
 Yosys estimate for one PE (Xilinx 7-series) & Done \\
 Vivado synthesis of the full design: LUT, FF, DSP, $F_{max}$ & Phase II \\
 Larger $N$, back-to-back matrices, optional board demo & Phase II \\
@@ -251,7 +251,7 @@ $N$ & \textbf{Systolic} & \textbf{Sequential} & \textbf{Speed-up} & \textbf{MACs
 \end{table}
 
 \subsection{Functional Correctness}
-All 13 PE checks, all 46 system tests and the comparison test pass, so the array produces bit-exact results against the golden model for identity, zero, extreme-value and random signed inputs. In the demo example, with $A$ holding 1 to 16 and $B$ holding small signed values, the hardware output equals the software reference element by element (for instance $C_{00} = 6$ and $C_{33} = 31$).
+All 21 PE checks, all 46 system tests and the comparison test pass, so the array produces bit-exact results against the golden model for identity, zero, extreme-value and random signed inputs. In the demo example, with $A$ holding 1 to 16 and $B$ holding small signed values, the hardware output equals the software reference element by element (for instance $C_{00} = 6$ and $C_{33} = 31$).
 
 \subsection{Data Propagation in the Waveform}
 Fig.~\ref{fig:wave} shows the simulated waveform of the demo. After \texttt{start}, the FSM spends one cycle in \texttt{CLEAR} and then enters \texttt{RUN}. Row 0 of $A$ (1, 2, 3, 4) enters \texttt{a\_west[0]} first, and each following row starts one cycle later; the columns of $B$ are skewed the same way on \texttt{b\_north}. PE$(0,0)$ finishes its sum ($1 + 0 + 9 - 4 = 6$) early, while the corner PE$(3,3)$ receives its first pair last and reaches 31 at the end. \texttt{done} rises at cycle 12, exactly $3N$.

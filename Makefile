@@ -65,7 +65,7 @@ show_compare: compare
 	$(GTKWAVE) waveforms/tb_compare.vcd &
 
 show_demo: demo
-	$(GTKWAVE) waveforms/tb_demo.vcd &
+	$(GTKWAVE) waveforms/tb_demo.vcd waveforms/tb_demo.gtkw &
 
 clean:
 	rm -rf sim/*.out sim/*.vcd waveforms/*.vcd

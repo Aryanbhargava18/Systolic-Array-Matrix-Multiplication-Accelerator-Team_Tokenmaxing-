@@ -97,3 +97,85 @@ PE utilization ≈ \(5.33 / 16 ≈ 33\%\) (fill/drain tax — expected for OS).
 
 Verilog RTL → Icarus (`make test`) → VCD waveforms → Vivado synth
 (resources + Fmax on lab FPGA) → report + live demo.
+
+## Ports and parameters
+
+All modules share three parameters:
+
+| Parameter | Default | Meaning |
+|-----------|---------|---------|
+| `N`       | 4       | Array size (N×N PEs, N×N matrices). Tested with 3 and 4. |
+| `DATA_W`  | 8       | Width of signed input elements of A and B (INT8). |
+| `ACC_W`   | 32      | Width of signed accumulators / result elements of C (INT32). |
+
+`clk` is the rising-edge clock and `rst_n` is an active-low asynchronous reset in every module.
+
+### `systolic_top` (accelerator top level)
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `start` | in | 1 | Level-sensitive. Raise after loading A and B; keep high until `done`, then lower it to return to IDLE. |
+| `wr_en` | in | 1 | Write one matrix element this cycle. |
+| `wr_sel_b` | in | 1 | 0 = write into A, 1 = write into B. |
+| `wr_addr` | in | `$clog2(N*N)` | Row-major element index (`i*N + j`). |
+| `wr_data` | in | `DATA_W`, signed | Element value. |
+| `done` | out | 1 | High from the end of the computation until `start` is lowered. |
+| `cycle_count` | out | 16 | Cycles from `start` to `done` (3N; 12 for N = 4); holds its value in DONE. |
+| `c_out[i][j]` | out | `ACC_W`, signed, N×N | Result C. Captured while `done` is high, so it is valid from the cycle **after** `done` rises. |
+
+Typical use: write N² elements of A and N² of B (one per cycle), raise `start`, wait for `done`,
+read `c_out` one cycle later, lower `start`.
+
+### `input_buffers`
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `wr_en`, `wr_sel_b`, `wr_addr`, `wr_data` | in | as above | Write port (same as the top level). |
+| `a_mem[k]`, `b_mem[k]` | out | `DATA_W`, signed, N² each | Stored A and B, row-major, read by the controller (and by `seq_matmul`). |
+
+### `controller`
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `start` | in | 1 | Starts IDLE → CLEAR → RUN → DONE. |
+| `a_mem`, `b_mem` | in | `DATA_W`, N² each | Matrices from the buffers. |
+| `clear` | out | 1 | One-cycle pulse that zeroes every PE accumulator (CLEAR state). |
+| `enable` | out | 1 | High during RUN: PEs perform a MAC each cycle. |
+| `a_west[i]` | out | `DATA_W`, N | Left-edge input of row i: `A[i][k]` at step `t = i + k`, else 0. |
+| `b_north[j]` | out | `DATA_W`, N | Top-edge input of column j: `B[k][j]` at step `t = j + k`, else 0. |
+| `done`, `cycle_count` | out | 1, 16 | As at the top level. |
+
+### `systolic_array`
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `clear`, `enable` | in | 1 | Broadcast to all PEs. |
+| `a_west[i]` | in | `DATA_W`, N | Enters PE(i,0); moves east one PE per cycle. |
+| `b_north[j]` | in | `DATA_W`, N | Enters PE(0,j); moves south one PE per cycle. |
+| `c_pe[i][j]` | out | `ACC_W`, N×N | Accumulator of PE(i,j), i.e. C[i][j] once RUN ends. |
+
+### `pe` and `mac_unit`
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `clear` | in | 1 | Zero the accumulator (has priority over `enable`). |
+| `enable` | in | 1 | `c_out <= c_out + a_in * b_in` this cycle. |
+| `a_in`, `b_in` | in | `DATA_W`, signed | Operands from the west / north neighbour. |
+| `a_out`, `b_out` | out | `DATA_W`, signed | `a_in`, `b_in` delayed by one cycle (to the east / south neighbour). |
+| `c_out` | out | `ACC_W`, signed | Accumulator C[i][j]. |
+
+`mac_unit` is combinational: `y = acc + sign_extend(a * b)` with a full 2·`DATA_W`-bit product.
+
+### `output_regs`
+
+| Port | Dir | Width | Meaning |
+|------|-----|-------|---------|
+| `capture` | in | 1 | Copy `c_pe` into `c_out` on each clock edge while high (connected to `done`). |
+| `c_pe[i][j]` | in | `ACC_W`, N×N | PE accumulators. |
+| `c_out[i][j]` | out | `ACC_W`, N×N | Held result. |
+
+### `seq_matmul` (baseline)
+
+Same `start` / `done` handshake and `cycle_count` as the top level, reading `a_mem` / `b_mem` directly.
+One MAC per cycle, latency N³ + 1 (65 for N = 4). It has no output register: `c_out` is written by the
+last MAC on the same edge that raises `done`, so it is valid as soon as `done` is high.
